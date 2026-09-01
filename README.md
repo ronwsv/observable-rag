@@ -190,6 +190,13 @@ docker build -t observable-rag . && docker run -p 8000:8000 observable-rag   # o
 docker compose up --build                                      # full stack with local Ollama
 ```
 
+CI/CD publishes the image to GHCR on every push to `main` (and on `v*` tags), so you can
+also pull the prebuilt image:
+
+```bash
+docker run -p 8000:8000 ghcr.io/ronwsv/observable-rag:latest
+```
+
 ## Project structure
 
 ```
