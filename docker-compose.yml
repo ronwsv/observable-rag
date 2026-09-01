@@ -1,0 +1,27 @@
+# Full local stack: the RAG API + a local Ollama LLM. No API keys, no cloud.
+#   docker compose up --build
+#   docker compose exec ollama ollama pull llama3.1:8b   # first run only
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      GAPRAG_LLM_PROVIDER: ollama
+      GAPRAG_LLM_MODEL: llama3.1:8b
+      GAPRAG_OLLAMA_BASE_URL: http://ollama:11434
+      # Swap to sentence_transformers (needs the [local] extra in the image) for
+      # semantic retrieval; hash keeps the image lean and dependency-free.
+      GAPRAG_EMBEDDING_PROVIDER: hash
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  ollama:

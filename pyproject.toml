@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gaprag"
+version = "0.1.0"
+description = "A production-grade, evaluated and observable RAG service (FastAPI + embeddings + FAISS, provider-agnostic)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Ron Williams Viera", email = "ronwsv@gmail.com" }]
+keywords = ["rag", "llm", "embeddings", "faiss", "fastapi", "evaluation", "observability", "ai-engineering"]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "numpy>=1.26",
+    "faiss-cpu>=1.8",
+    "httpx>=0.27",
+    "typer>=0.12",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+# Local semantic embeddings (pulls torch — heavier, but fully offline & free).
+local = ["sentence-transformers>=2.7"]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.30"]
+langfuse = ["langfuse>=2.40"]
+# Optional LangChain retrieval backend (see GAPRAG_RETRIEVER). The native FAISS
+# path is the default; this shows the same pipeline running on LangChain's FAISS.
+langchain = ["langchain-community>=0.2", "langchain-core>=0.2"]
+# AWS Bedrock LLM (Converse API) + Titan embeddings. Credentials come from the
+# standard AWS chain (env vars, ~/.aws/credentials, or an IAM role).
+bedrock = ["boto3>=1.34"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4"]
+
+[project.scripts]
+gaprag = "gaprag.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/ronwsv/observable-rag"
+Repository = "https://github.com/ronwsv/observable-rag"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]  # FastAPI/Typer use function calls in argument defaults by design
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+asyncio_mode = "auto"
