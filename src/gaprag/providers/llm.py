@@ -194,6 +194,49 @@ class BedrockLLM:
         )
 
 
+class GeminiLLM:
+    """Google Gemini via the unified google-genai SDK (the ``[gemini]`` extra).
+
+    Reads GOOGLE_API_KEY / GEMINI_API_KEY from the environment. The client is created
+    lazily, so the provider can be constructed without a key (e.g. in tests).
+    """
+
+    name = "gemini"
+
+    def __init__(self, model: str = "gemini-2.0-flash") -> None:
+        try:
+            from google import genai  # noqa: F401
+        except ImportError as exc:  # pragma: no cover - optional dependency
+            raise ImportError('google-genai missing. Install: pip install -e ".[gemini]"') from exc
+        self.model = model
+        self._client = None
+
+    def _client_or_create(self):
+        if self._client is None:
+            from google import genai
+
+            self._client = genai.Client()
+        return self._client
+
+    def complete(self, system: str, user: str, temperature: float = 0.0) -> LLMResult:
+        from google.genai import types
+
+        resp = self._client_or_create().models.generate_content(
+            model=self.model,
+            contents=user,
+            config=types.GenerateContentConfig(
+                system_instruction=system, temperature=temperature
+            ),
+        )
+        usage = resp.usage_metadata
+        return LLMResult(
+            text=(resp.text or "").strip(),
+            prompt_tokens=getattr(usage, "prompt_token_count", 0) or 0,
+            completion_tokens=getattr(usage, "candidates_token_count", 0) or 0,
+            model=self.model,
+        )
+
+
 def build_llm_provider(
     provider: str,
     model: str,
@@ -214,4 +257,6 @@ def build_llm_provider(
         return AnthropicLLM(model=model)
     if provider == "bedrock":
         return BedrockLLM(model=model, region=region)
+    if provider == "gemini":
+        return GeminiLLM(model=model)
     raise ValueError(f"Unknown LLM provider: {provider!r}")

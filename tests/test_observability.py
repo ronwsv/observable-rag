@@ -15,6 +15,10 @@ def test_bedrock_model_id_resolves_to_price():
     assert estimate_cost_usd("us.anthropic.claude-3-5-haiku-20241022-v1:0", 1_000_000, 0) == 0.80
 
 
+def test_gemini_model_id_resolves_to_price():
+    assert estimate_cost_usd("gemini-2.0-flash", 1_000_000, 0) == 0.10
+
+
 def test_trace_finalize_computes_cost():
     trace = RequestTrace(
         query="q", model="gpt-4o-mini", prompt_tokens=1_000_000, completion_tokens=0

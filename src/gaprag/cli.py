@@ -90,5 +90,13 @@ def eval() -> None:
     raise typer.Exit(code=subprocess.call([sys.executable, str(script)]))
 
 
+@app.command()
+def mcp() -> None:
+    """Run the Model Context Protocol server (exposes RAG as MCP tools over stdio)."""
+    from .mcp_server import main as run_mcp
+
+    run_mcp()
+
+
 if __name__ == "__main__":
     app()

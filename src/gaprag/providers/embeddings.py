@@ -135,6 +135,31 @@ class BedrockEmbedding:
         return l2_normalize(np.asarray(vectors, dtype=np.float32))
 
 
+class GeminiEmbedding:
+    """Google Gemini embeddings via google-genai (the ``[gemini]`` extra + API key)."""
+
+    name = "gemini"
+    _DIMS = {"text-embedding-004": 768, "gemini-embedding-001": 3072}
+
+    def __init__(self, model: str = "text-embedding-004") -> None:
+        try:
+            from google import genai  # noqa: F401
+        except ImportError as exc:  # pragma: no cover - optional dependency
+            raise ImportError('google-genai missing. Install: pip install -e ".[gemini]"') from exc
+        self.model = model
+        self.dim = self._DIMS.get(model, 768)
+        self._client = None
+
+    def embed(self, texts: Sequence[str]) -> np.ndarray:
+        from google import genai
+
+        if self._client is None:
+            self._client = genai.Client()
+        resp = self._client.models.embed_content(model=self.model, contents=list(texts))
+        vectors = np.asarray([e.values for e in resp.embeddings], dtype=np.float32)
+        return l2_normalize(vectors)
+
+
 def build_embedding_provider(
     provider: str, model: str, *, region: str = "us-east-1"
 ) -> EmbeddingProvider:
@@ -148,4 +173,6 @@ def build_embedding_provider(
         return OpenAIEmbedding(model=model)
     if provider == "bedrock":
         return BedrockEmbedding(model=model, region=region)
+    if provider == "gemini":
+        return GeminiEmbedding(model=model)
     raise ValueError(f"Unknown embedding provider: {provider!r}")

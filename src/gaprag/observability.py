@@ -38,6 +38,9 @@ _PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
     "gpt-4.1-mini": (0.40, 1.60),
     "claude-3-5-sonnet": (3.00, 15.00),
     "claude-3-5-haiku": (0.80, 4.00),
+    "gemini-2.0-flash": (0.10, 0.40),
+    "gemini-1.5-flash": (0.075, 0.30),
+    "gemini-1.5-pro": (1.25, 5.00),
 }
 
 

@@ -17,9 +17,11 @@ reference implementation that answers those questions.
 
 ## Highlights
 
-- **Provider-agnostic** — swap the LLM (Ollama, OpenAI, Anthropic) and the embedding backend
-  by changing one environment variable. No framework lock-in; the retrieval layer is built
-  directly on embeddings + FAISS.
+- **Provider-agnostic** — swap the LLM (Ollama, OpenAI, Anthropic, Google Gemini, AWS Bedrock)
+  and the embedding backend by changing one environment variable. No framework lock-in; the
+  retrieval layer is built directly on embeddings + FAISS.
+- **MCP-ready** — the same RAG service is exposed as a Model Context Protocol server, so any
+  MCP client (Claude Desktop, IDEs, agents) can call it as a tool.
 - **Evaluated** — a labeled question set and an eval harness that measures retrieval
   (hit rate, MRR, precision@k) and, optionally, answer **faithfulness** via LLM-as-judge.
   The retrieval eval runs in CI on every push with a regression gate.
@@ -69,6 +71,8 @@ pip install -e ".[openai]"  ".[anthropic]"
 pip install -e ".[langchain]"
 # AWS Bedrock (Converse API + Titan embeddings):
 pip install -e ".[bedrock]"
+# Google Gemini (LLM + embeddings), and the MCP server:
+pip install -e ".[gemini]"  ".[mcp]"
 
 # 2. Configure (optional — sensible defaults ship in .env.example)
 cp .env.example .env
@@ -95,13 +99,17 @@ Selected via environment variables; see [`.env.example`](.env.example).
 
 | Kind | Options (`GAPRAG_*_PROVIDER`) | Notes |
 |---|---|---|
-| LLM | `ollama` (default), `openai`, `anthropic`, `bedrock`, `mock` | `mock` is offline & deterministic |
-| Embeddings | `sentence_transformers` (default), `openai`, `bedrock`, `hash` | `hash` is a dependency-free lexical baseline |
+| LLM | `ollama` (default), `openai`, `anthropic`, `bedrock`, `gemini`, `mock` | `mock` is offline & deterministic |
+| Embeddings | `sentence_transformers` (default), `openai`, `bedrock`, `gemini`, `hash` | `hash` is a dependency-free lexical baseline |
 
 **AWS Bedrock** uses the unified **Converse API** for generation (`us.anthropic.claude-*`,
 Llama, etc.) and **Titan** for embeddings. Credentials come from the standard AWS chain
 (environment, `~/.aws/credentials`, or an IAM role) — the code never handles keys. Set the
 region with `GAPRAG_AWS_REGION`.
+
+**Google Gemini** (via the unified `google-genai` SDK) provides both generation
+(`gemini-2.0-flash`) and embeddings (`text-embedding-004`). Reads `GOOGLE_API_KEY` /
+`GEMINI_API_KEY` from the environment.
 
 ## Evaluation
 
@@ -173,6 +181,31 @@ Building retrieval directly on FAISS keeps full control and removes a heavy depe
 LangChain adapter shows the same result through the ecosystem's abstractions. Choose the tool
 deliberately rather than being chosen by it.
 
+## Model Context Protocol (MCP)
+
+The same RAG service is exposed as an **MCP server**, so any MCP client (Claude Desktop,
+IDEs, agents) can call it as a controlled tool rather than embedding a custom integration.
+Two tools are published:
+
+- `search_knowledge_base(query, k)` — semantic retrieval over the corpus.
+- `answer_question(query)` — the full RAG pipeline, returning the answer with citations.
+
+Run the server (needs the `[mcp]` extra and a built index):
+
+```bash
+gaprag mcp        # serves over stdio, the transport MCP clients expect
+```
+
+Register it with an MCP client — for example, Claude Desktop's config:
+
+```json
+{
+  "mcpServers": {
+    "observable-rag": { "command": "gaprag", "args": ["mcp"] }
+  }
+}
+```
+
 ## Testing & CI
 
 ```bash
@@ -211,7 +244,8 @@ src/gaprag/
   rag.py            # orchestration + request tracing
   observability.py  # structured traces, cost estimation
   api.py            # FastAPI service
-  cli.py            # ingest / ask / serve / eval
+  cli.py            # ingest / ask / serve / eval / mcp
+  mcp_server.py     # exposes the RAG service as MCP tools
   providers/        # pluggable embedding & LLM backends
 evals/              # dataset + harness + reports
 tests/              # offline test suite

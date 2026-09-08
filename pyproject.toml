@@ -36,6 +36,10 @@ langchain = ["langchain-community>=0.2", "langchain-core>=0.2"]
 # AWS Bedrock LLM (Converse API) + Titan embeddings. Credentials come from the
 # standard AWS chain (env vars, ~/.aws/credentials, or an IAM role).
 bedrock = ["boto3>=1.34"]
+# Google Gemini (LLM + embeddings) via the unified google-genai SDK.
+gemini = ["google-genai>=0.8"]
+# Expose the RAG service as a Model Context Protocol (MCP) server.
+mcp = ["mcp>=1.2"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4"]
 
 [project.scripts]
