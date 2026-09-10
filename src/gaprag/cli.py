@@ -38,6 +38,7 @@ def ingest() -> None:
 def ask(
     query: str = typer.Argument(..., help="Your question."),
     top_k: int = typer.Option(None, "--top-k", "-k", help="Number of chunks to retrieve."),
+    graph: bool = typer.Option(False, "--graph", help="Use the LangGraph agent orchestrator."),
 ) -> None:
     """Ask a question against the indexed corpus."""
     from .rag import build_pipeline  # local import: avoids loading models for other commands
@@ -48,6 +49,22 @@ def ask(
     except FileNotFoundError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=1) from exc
+
+    if graph:
+        from .graph import build_rag_graph
+
+        agent = build_rag_graph(
+            pipeline.retriever, pipeline.llm, pipeline.router, top_k=top_k or pipeline.top_k
+        )
+        final = agent.invoke({"query": query})
+        console.print(
+            Panel(
+                final.get("answer", ""),
+                title=f"Answer (LangGraph · route: {final.get('route')})",
+                border_style="green",
+            )
+        )
+        return
 
     result = pipeline.answer(query, top_k=top_k)
     console.print(

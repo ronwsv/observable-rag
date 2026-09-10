@@ -71,8 +71,8 @@ pip install -e ".[openai]"  ".[anthropic]"
 pip install -e ".[langchain]"
 # AWS Bedrock (Converse API + Titan embeddings):
 pip install -e ".[bedrock]"
-# Google Gemini (LLM + embeddings), and the MCP server:
-pip install -e ".[gemini]"  ".[mcp]"
+# Google Gemini (LLM + embeddings), the MCP server, and the LangGraph orchestrator:
+pip install -e ".[gemini]"  ".[mcp]"  ".[langgraph]"
 
 # 2. Configure (optional — sensible defaults ship in .env.example)
 cp .env.example .env
@@ -161,6 +161,14 @@ Before retrieving, an LLM router picks a "tool":
 The model must reply with strict JSON; if parsing fails for any reason, the router falls back
 to a deterministic heuristic, so the pipeline never breaks on a bad model response.
 
+The same flow is also available as an explicit **LangGraph** state machine (`route` node →
+conditional edge → `retrieve`/`generate`), reusing the same components — a drop-in
+orchestrator, not a rewrite. Needs the `[langgraph]` extra:
+
+```bash
+gaprag ask --graph "What is RAG and when should I use it?"
+```
+
 ## Retrieval backends: native vs LangChain
 
 Retrieval is built directly on FAISS by default (`GAPRAG_RETRIEVER=native`). An optional
@@ -242,6 +250,7 @@ src/gaprag/
   langchain_retriever.py  # optional LangChain FAISS backend (same interface)
   router.py         # agentic retrieve/direct decision
   rag.py            # orchestration + request tracing
+  graph.py          # same flow as a LangGraph state machine
   observability.py  # structured traces, cost estimation
   api.py            # FastAPI service
   cli.py            # ingest / ask / serve / eval / mcp
